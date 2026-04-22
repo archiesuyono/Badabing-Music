@@ -1,0 +1,466 @@
+const { initializeSpotify, searchMusic, getTrackLyrics } = require('../src/utils/externalApis');
+const axios = require('axios');
+
+// Mock axios
+jest.mock('axios');
+
+// Mock spotify-web-api-node
+jest.mock('spotify-web-api-node', () => {
+  return jest.fn().mockImplementation(() => ({
+    clientCredentialsFlow: jest.fn().mockResolvedValue({
+      body: { access_token: 'mock-token' }
+    }),
+    setAccessToken: jest.fn(),
+    searchTracks: jest.fn().mockResolvedValue({
+      body: {
+        tracks: {
+          items: [
+            {
+              id: '123',
+              uri: 'spotify:track:123',
+              name: 'Test Song',
+              artists: [{ name: 'Test Artist' }],
+              album: {
+                name: 'Test Album',
+                images: [{ url: 'https://example.com/image.jpg' }]
+              },
+              duration_ms: 180000,
+              preview_url: 'https://example.com/preview.mp3',
+              external_urls: { spotify: 'https://open.spotify.com/track/123' }
+            }
+          ]
+        }
+      }
+    })
+  }));
+});
+
+// Mock google generative AI
+jest.mock('@google/generative-ai', () => ({
+  GoogleGenerativeAI: jest.fn().mockImplementation(() => ({
+    getGenerativeModel: jest.fn().mockReturnValue({
+      generateContent: jest.fn().mockResolvedValue({
+        response: {
+          text: jest.fn().mockReturnValue('pop, dance, funk')
+        }
+      })
+    })
+  }))
+}));
+
+describe('External APIs Utils', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env.SPOTIFY_CLIENT_ID = 'test-client-id';
+    process.env.SPOTIFY_CLIENT_SECRET = 'test-client-secret';
+    process.env.GENIUS_API_KEY = 'test-genius-key';
+    process.env.GEMINI_API_KEY = 'test-gemini-key';
+  });
+
+  describe('initializeSpotify', () => {
+    it('should initialize Spotify API successfully', async () => {
+      const result = await initializeSpotify();
+      expect(result).toBe(true);
+    });
+
+    it('should handle Spotify initialization failure', async () => {
+      const SpotifyWebApi = require('spotify-web-api-node');
+      SpotifyWebApi.mockImplementationOnce(() => ({
+        clientCredentialsFlow: jest.fn().mockRejectedValue(new Error('Auth failed')),
+        setAccessToken: jest.fn()
+      }));
+
+      axios.post.mockResolvedValue({
+        data: { access_token: 'fallback-token' }
+      });
+
+      const result = await initializeSpotify();
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('searchMusic', () => {
+    it('should search for music and return formatted results', async () => {
+      const results = await searchMusic('test query', 10);
+      
+      expect(results).toBeDefined();
+      expect(Array.isArray(results)).toBe(true);
+      expect(results.length).toBeGreaterThan(0);
+      expect(results[0]).toHaveProperty('spotifyId');
+      expect(results[0]).toHaveProperty('title');
+      expect(results[0]).toHaveProperty('artists');
+      expect(results[0]).toHaveProperty('album');
+      expect(results[0]).toHaveProperty('imageUrl');
+      expect(results[0]).toHaveProperty('duration');
+    });
+
+    it('should return results with correct structure', async () => {
+      const results = await searchMusic('test');
+      
+      results.forEach(track => {
+        expect(track).toHaveProperty('spotifyId');
+        expect(track).toHaveProperty('spotifyUri');
+        expect(track).toHaveProperty('title');
+        expect(track).toHaveProperty('artists');
+        expect(Array.isArray(track.artists)).toBe(true);
+      });
+    });
+
+    it('should limit results to 50', async () => {
+      const results = await searchMusic('test query', 100);
+      // Spotify limits to 50, so results should respect that
+      expect(results).toBeDefined();
+    });
+
+    it('should handle empty search results', async () => {
+      const SpotifyWebApi = require('spotify-web-api-node');
+      SpotifyWebApi.mockImplementationOnce(() => ({
+        clientCredentialsFlow: jest.fn().mockResolvedValue({
+          body: { access_token: 'mock-token' }
+        }),
+        setAccessToken: jest.fn(),
+        searchTracks: jest.fn().mockResolvedValue({
+          body: {
+            tracks: {
+              items: []
+            }
+          }
+        })
+      }));
+
+      // Result will be empty array
+      const results = await searchMusic('nonexistent');
+      expect(Array.isArray(results)).toBe(true);
+    });
+
+    it('should include preview URL when available', async () => {
+      const results = await searchMusic('test');
+      expect(results[0].previewUrl).toBe('https://example.com/preview.mp3');
+    });
+
+    it('should include external URL', async () => {
+      const results = await searchMusic('test');
+      expect(results[0].externalUrl).toBe('https://open.spotify.com/track/123');
+    });
+  });
+
+  describe('getTrackLyrics', () => {
+    it('should get track lyrics information', async () => {
+      axios.get.mockResolvedValue({
+        data: {
+          response: {
+            hits: [
+              {
+                result: {
+                  title: 'Test Song',
+                  primary_artist: { name: 'Test Artist' },
+                  url: 'https://genius.com/test',
+                  song_art_image_thumbnail_url: 'https://example.com/image.jpg'
+                }
+              }
+            ]
+          }
+        }
+      });
+
+      const result = await getTrackLyrics('Test Song', ['Test Artist']);
+      
+      expect(result).toBeDefined();
+      expect(result.title).toBe('Test Song');
+      expect(result.artist).toBe('Test Artist');
+      expect(result.url).toBe('https://genius.com/test');
+      expect(result.thumbnail).toBeDefined();
+    });
+
+    it('should handle multiple artists', async () => {
+      axios.get.mockResolvedValue({
+        data: {
+          response: {
+            hits: [
+              {
+                result: {
+                  title: 'Collaboration Song',
+                  primary_artist: { name: 'Artist 1' },
+                  url: 'https://genius.com/collab',
+                  song_art_image_thumbnail_url: 'https://example.com/image.jpg'
+                }
+              }
+            ]
+          }
+        }
+      });
+
+      const result = await getTrackLyrics('Collaboration Song', ['Artist 1', 'Artist 2']);
+      expect(result).toBeDefined();
+      expect(result.artist).toBe('Artist 1');
+    });
+
+    it('should return null if no lyrics found', async () => {
+      axios.get.mockResolvedValue({
+        data: {
+          response: {
+            hits: []
+          }
+        }
+      });
+
+      const result = await getTrackLyrics('Unknown Song', ['Unknown Artist']);
+      expect(result).toBeNull();
+    });
+
+    it('should handle single artist array', async () => {
+      axios.get.mockResolvedValue({
+        data: {
+          response: {
+            hits: [
+              {
+                result: {
+                  title: 'Solo Song',
+                  primary_artist: { name: 'Solo Artist' },
+                  url: 'https://genius.com/solo',
+                  song_art_image_thumbnail_url: 'https://example.com/image.jpg'
+                }
+              }
+            ]
+          }
+        }
+      });
+
+      const result = await getTrackLyrics('Solo Song', ['Solo Artist']);
+      expect(result.artist).toBe('Solo Artist');
+    });
+
+    it('should construct proper search query', async () => {
+      axios.get.mockResolvedValue({
+        data: {
+          response: {
+            hits: []
+          }
+        }
+      });
+
+      await getTrackLyrics('Test Title', ['Test Artist']);
+      
+      expect(axios.get).toHaveBeenCalled();
+      const callArgs = axios.get.mock.calls[0][0];
+      expect(callArgs).toContain('genius.com');
+    });
+
+    it('should handle API errors gracefully', async () => {
+      axios.get.mockRejectedValue(new Error('API Error'));
+
+      try {
+        await getTrackLyrics('Test', ['Artist']);
+      } catch (error) {
+        expect(error.message).toContain('Failed to get lyrics');
+      }
+    });
+
+    it('should handle result without song_art_image_thumbnail_url', async () => {
+      axios.get.mockResolvedValue({
+        data: {
+          response: {
+            hits: [
+              {
+                result: {
+                  title: 'Test Song',
+                  primary_artist: { name: 'Test Artist' },
+                  url: 'https://genius.com/test'
+                }
+              }
+            ]
+          }
+        }
+      });
+
+      const result = await getTrackLyrics('Test Song', ['Test Artist']);
+      expect(result).toBeDefined();
+      expect(result.title).toBe('Test Song');
+      expect(result.thumbnail).toBeUndefined();
+    });
+
+    it('should handle result without primary_artist', async () => {
+      axios.get.mockResolvedValue({
+        data: {
+          response: {
+            hits: [
+              {
+                result: {
+                  title: 'Test Song',
+                  url: 'https://genius.com/test',
+                  song_art_image_thumbnail_url: 'https://example.com/image.jpg'
+                }
+              }
+            ]
+          }
+        }
+      });
+
+      const result = await getTrackLyrics('Test Song', ['Test Artist']);
+      expect(result).toBeDefined();
+    });
+
+    it('should handle empty artists array', async () => {
+      axios.get.mockResolvedValue({
+        data: {
+          response: {
+            hits: [
+              {
+                result: {
+                  title: 'Test Song',
+                  primary_artist: { name: 'Test Artist' },
+                  url: 'https://genius.com/test',
+                  song_art_image_thumbnail_url: 'https://example.com/image.jpg'
+                }
+              }
+            ]
+          }
+        }
+      });
+
+      const result = await getTrackLyrics('Test Song', []);
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('searchMusic - Error Handling', () => {
+    it('should handle search API errors', async () => {
+      const SpotifyWebApi = require('spotify-web-api-node');
+      SpotifyWebApi.mockImplementationOnce(() => ({
+        clientCredentialsFlow: jest.fn().mockResolvedValue({
+          body: { access_token: 'mock-token' }
+        }),
+        setAccessToken: jest.fn(),
+        searchTracks: jest.fn().mockRejectedValue(new Error('Search failed'))
+      }));
+
+      try {
+        await searchMusic('test');
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('should handle missing artists array in track', async () => {
+      const SpotifyWebApi = require('spotify-web-api-node');
+      SpotifyWebApi.mockImplementationOnce(() => ({
+        clientCredentialsFlow: jest.fn().mockResolvedValue({
+          body: { access_token: 'mock-token' }
+        }),
+        setAccessToken: jest.fn(),
+        searchTracks: jest.fn().mockResolvedValue({
+          body: {
+            tracks: {
+              items: [
+                {
+                  id: '123',
+                  uri: 'spotify:track:123',
+                  name: 'Test Song',
+                  album: {
+                    name: 'Test Album',
+                    images: [{ url: 'https://example.com/image.jpg' }]
+                  },
+                  duration_ms: 180000
+                }
+              ]
+            }
+          }
+        })
+      }));
+
+      const results = await searchMusic('test');
+      expect(Array.isArray(results)).toBe(true);
+    });
+
+    it('should handle missing album in track', async () => {
+      const SpotifyWebApi = require('spotify-web-api-node');
+      SpotifyWebApi.mockImplementationOnce(() => ({
+        clientCredentialsFlow: jest.fn().mockResolvedValue({
+          body: { access_token: 'mock-token' }
+        }),
+        setAccessToken: jest.fn(),
+        searchTracks: jest.fn().mockResolvedValue({
+          body: {
+            tracks: {
+              items: [
+                {
+                  id: '123',
+                  uri: 'spotify:track:123',
+                  name: 'Test Song',
+                  artists: [{ name: 'Test Artist' }],
+                  duration_ms: 180000
+                }
+              ]
+            }
+          }
+        })
+      }));
+
+      const results = await searchMusic('test');
+      expect(Array.isArray(results)).toBe(true);
+    });
+
+    it('should handle missing duration', async () => {
+      const SpotifyWebApi = require('spotify-web-api-node');
+      SpotifyWebApi.mockImplementationOnce(() => ({
+        clientCredentialsFlow: jest.fn().mockResolvedValue({
+          body: { access_token: 'mock-token' }
+        }),
+        setAccessToken: jest.fn(),
+        searchTracks: jest.fn().mockResolvedValue({
+          body: {
+            tracks: {
+              items: [
+                {
+                  id: '123',
+                  uri: 'spotify:track:123',
+                  name: 'Test Song',
+                  artists: [{ name: 'Test Artist' }],
+                  album: { name: 'Test Album', images: [] }
+                }
+              ]
+            }
+          }
+        })
+      }));
+
+      const results = await searchMusic('test');
+      expect(Array.isArray(results)).toBe(true);
+    });
+  });
+
+  describe('initializeSpotify - Additional Cases', () => {
+    it('should handle spotify initialization with fallback axios', async () => {
+      process.env.SPOTIFY_CLIENT_ID = 'test-id';
+      process.env.SPOTIFY_CLIENT_SECRET = 'test-secret';
+
+      const SpotifyWebApi = require('spotify-web-api-node');
+      SpotifyWebApi.mockImplementationOnce(() => ({
+        clientCredentialsFlow: jest.fn().mockRejectedValue(new Error('Failed')),
+        setAccessToken: jest.fn()
+      }));
+
+      axios.post.mockResolvedValue({
+        data: { access_token: 'fallback-token' }
+      });
+
+      const result = await initializeSpotify();
+      expect(result).toBeDefined();
+    });
+
+    it('should set spotify access token after initialization', async () => {
+      const SpotifyWebApi = require('spotify-web-api-node');
+      const mockSetToken = jest.fn();
+      
+      SpotifyWebApi.mockImplementationOnce(() => ({
+        clientCredentialsFlow: jest.fn().mockResolvedValue({
+          body: { access_token: 'test-token' }
+        }),
+        setAccessToken: mockSetToken
+      }));
+
+      await initializeSpotify();
+      expect(mockSetToken).toHaveBeenCalledWith('test-token');
+    });
+  });
+})

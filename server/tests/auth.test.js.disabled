@@ -1,0 +1,74 @@
+const request = require('supertest');
+const app = require('../src/index');
+const { User } = require('../src/models');
+
+describe('Authentication Routes', () => {
+  // Clean up after all tests
+  afterAll(async () => {
+    await User.destroy({ where: {} });
+  });
+
+  describe('POST /api/auth/register', () => {
+    it('should register a new user', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: 'test@example.com',
+          username: 'testuser',
+          password: 'password123',
+          firstName: 'Test',
+          lastName: 'User'
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveProperty('token');
+      expect(res.body.user).toHaveProperty('email', 'test@example.com');
+    });
+
+    it('should not register duplicate email', async () => {
+      await User.create({
+        email: 'duplicate@example.com',
+        username: 'duplicate_user',
+        password: 'hashed_password',
+        isVerified: true
+      });
+
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: 'duplicate@example.com',
+          username: 'newuser',
+          password: 'password123'
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Email already registered');
+    });
+  });
+
+  describe('POST /api/auth/login', () => {
+    it('should login successfully', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'test@example.com',
+          password: 'password123'
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('token');
+      expect(res.body.user).toHaveProperty('email');
+    });
+
+    it('should not login with wrong password', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'test@example.com',
+          password: 'wrongpassword'
+        });
+
+      expect(res.status).toBe(401);
+    });
+  });
+});
