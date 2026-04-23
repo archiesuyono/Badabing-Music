@@ -1,0 +1,116 @@
+.search-container {
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.search-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #eee;
+}
+
+.search-tabs button {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 16px;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.search-tabs button.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+.search-form {
+  margin-bottom: 30px;
+}
+
+.search-form .form-group {
+  display: flex;
+  gap: 10px;
+}
+
+.search-form input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.search-form button {
+  padding: 12px 30px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.search-form button:hover:not(:disabled) {
+  background: #764ba2;
+}
+
+.search-results {
+  margin-top: 30px;
+}
+
+.track-list {
+  display: grid;
+  gap: 15px;
+}
+
+.track-item {
+  display: flex;
+  gap: 15px;
+  padding: 15px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  align-items: center;
+  transition: all 0.3s;
+}
+
+.track-item:hover {
+  background: #f9f9f9;
+  border-color: #ddd;
+}
+
+.track-item img {
+  width: 80px;
+  height: 80px;
+  border-radius: 5px;
+  object-fit: cover;
+}
+
+.track-info {
+  flex: 1;
+}
+
+.track-info h4 {
+  margin: 0;
+  color: #333;
+}
+
+.track-info p {
+  margin: 5px 0 0 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.track-info small {
+  color: #999;
+  font-size: 12px;
+}
+
+.preview {
+  height: 32px;
+  width: 200px;
+}

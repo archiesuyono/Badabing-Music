@@ -1,0 +1,67 @@
+.favorites-container {
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.favorites-list {
+  display: grid;
+  gap: 15px;
+}
+
+.favorite-item {
+  display: flex;
+  gap: 15px;
+  padding: 15px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  align-items: center;
+  transition: all 0.3s;
+}
+
+.favorite-item:hover {
+  background: #f9f9f9;
+  border-color: #ddd;
+}
+
+.favorite-item img {
+  width: 80px;
+  height: 80px;
+  border-radius: 5px;
+  object-fit: cover;
+}
+
+.song-info {
+  flex: 1;
+}
+
+.song-info h4 {
+  margin: 0;
+  color: #333;
+}
+
+.song-info p {
+  margin: 5px 0 0 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.preview {
+  height: 32px;
+  width: 200px;
+}
+
+.btn-remove {
+  padding: 8px 16px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.btn-remove:hover {
+  background: #ee5a52;
+}
