@@ -91,10 +91,8 @@ describe('Logger', () => {
 
     it('should not log debug messages in production', () => {
       process.env.NODE_ENV = 'production';
-      const initialCallCount = consoleLogSpy.mock.calls.length;
       logger.debug('Debug message');
-      // Debug should not be called in production
-      expect(consoleLogSpy.mock.calls.length).toBe(initialCallCount);
+      expect(consoleLogSpy).not.toHaveBeenCalled(); 
     });
 
     it('should write debug logs to file in development', () => {

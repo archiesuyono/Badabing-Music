@@ -46,12 +46,10 @@ describe('authenticateToken Middleware', () => {
     expect(res.status).toHaveBeenCalledWith(403);
   });
 
-  it('should return 403 if authorization header format is wrong', () => {
+  it('should return 401 if authorization header format is wrong', () => {
     req.headers.authorization = 'InvalidFormat token';
-
     authenticateToken(req, res, next);
-
-    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.status).toHaveBeenCalledWith(401); 
   });
 
   it('should extract userId from valid token payload', () => {

@@ -44,7 +44,7 @@ describe('Validators', () => {
     it('should reject weak password', () => {
       expect(validatePassword('weak')).toBe(false);
       expect(validatePassword('12345')).toBe(false);
-      expect(!validatePassword('')).toBe(true);
+      expect(validatePassword('')).toBe(false);
     });
 
     it('should accept exactly 6 characters', () => {
@@ -58,8 +58,8 @@ describe('Validators', () => {
     });
 
     it('should reject null and undefined', () => {
-      expect(!validatePassword(null)).toBe(true);
-      expect(!validatePassword(undefined)).toBe(true);
+      expect(validatePassword(null)).toBe(false);      
+      expect(validatePassword(undefined)).toBe(false); 
     });
 
     it('should accept long passwords', () => {

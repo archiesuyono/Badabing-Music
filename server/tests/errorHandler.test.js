@@ -17,6 +17,7 @@ describe('Error Handler Middleware', () => {
   });
 
   afterEach(() => {
+    delete process.env.NODE_ENV;
     console.error.mockRestore();
   });
 
