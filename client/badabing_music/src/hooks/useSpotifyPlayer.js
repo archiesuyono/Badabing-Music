@@ -23,7 +23,7 @@ export const useSpotifyPlayer = () => {
     // Define global callback for Spotify SDK
     window.onSpotifyWebPlaybackSDKReady = () => {
       const player = new window.Spotify.Player({
-        name: 'Music App Web Player',
+        name: 'Badabing Music Web Player',
         getOAuthToken: (callback) => {
           callback(token);
         },

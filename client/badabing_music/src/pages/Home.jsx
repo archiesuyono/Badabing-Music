@@ -212,7 +212,7 @@ export const Home = () => {
             className="navbar-brand mb-0 h1"
             style={{ cursor: 'pointer' }}
           >
-            🎵 Music App
+            🎵 Badabing Music
           </span>
           <button 
             className="btn btn-outline-light btn-sm"

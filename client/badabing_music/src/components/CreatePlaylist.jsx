@@ -29,11 +29,9 @@ export const CreatePlaylist = () => {
     setLoading(true);
 
     try {
-      // Dispatch ke Redux — bukan langsung ke API
       const result = await dispatch(createPlaylist({ name: formData.name, description: formData.description }));
 
       if (createPlaylist.fulfilled.match(result)) {
-        // Refresh list playlist di store supaya up-to-date
         dispatch(fetchPlaylists());
         navigate('/home');
       } else {
@@ -164,7 +162,7 @@ export const CreatePlaylist = () => {
           onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
           onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
         >
-          🎵 Music App
+          🎵 Badabing Music
         </div>
         <button
           style={styles.backButton}

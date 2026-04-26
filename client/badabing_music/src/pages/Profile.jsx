@@ -1,17 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import apiClient from '../api/apiClient';
 
 export const Profile = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Debug log
   console.log('User object:', user);
 
-  // Extract username display - if google login use part before @
   const displayUsername = user?.username || (user?.email ? user.email.split('@')[0] : 'Guest');
 
   const handleLogout = () => {
@@ -28,7 +25,7 @@ export const Profile = () => {
             style={{ cursor: 'pointer' }}
             onClick={() => navigate('/home')}
           >
-            🎵 Music App
+            🎵 Badabing Music
           </span>
           <button 
             className="btn btn-outline-light btn-sm"
@@ -40,7 +37,6 @@ export const Profile = () => {
       </nav>
 
       <div className="container" style={{ paddingTop: '40px', paddingBottom: '80px', maxWidth: '600px' }}>
-        {/* Profile Card */}
         <div style={{
           backgroundColor: '#282828',
           borderRadius: '12px',
@@ -66,7 +62,6 @@ export const Profile = () => {
             </h1>
           </div>
 
-          {/* Profile Info */}
           <div style={{
             backgroundColor: '#1e1e1e',
             borderRadius: '8px',
@@ -113,7 +108,6 @@ export const Profile = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <button
               className="btn btn-outline-light"
@@ -126,7 +120,6 @@ export const Profile = () => {
         </div>
       </div>
 
-      {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div 
           style={{
@@ -178,7 +171,6 @@ export const Profile = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };

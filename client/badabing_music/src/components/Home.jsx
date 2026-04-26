@@ -103,7 +103,7 @@ export const Home = () => {
       <nav className="navbar navbar-dark bg-dark sticky-top" style={{ zIndex: 1030 }}>
         <div className="container-fluid">
           <span className="navbar-brand mb-0 h1" style={{ cursor: 'pointer' }}>
-            🎵 Music App
+            🎵 Badabing Music
           </span>
           <button
             className="btn btn-outline-light btn-sm"

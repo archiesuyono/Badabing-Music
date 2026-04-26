@@ -222,7 +222,7 @@ export const CreatePlaylist = () => {
           onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
           onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
         >
-          🎵 Music App
+          🎵 Badabing <Music></Music>
         </div>
         <button
           style={styles.backButton}
